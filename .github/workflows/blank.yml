@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Subject-Based Grade Tracker</title>
+  <style>
+    body {
+      font-family: Georgia, serif;
+      background-color: #0a0a0a;
+      color: #d4d4d8;
+      margin: 20px;
+      transition: background-color 0.4s ease;
+    }
+    input, select, button {
+      font-family: Georgia, serif;
+      font-size: 16px;
+      margin: 5px 0;
+      padding: 6px;
+      background-color: #1e1e1e;
+      border: 1px solid #333;
+      color: #d4d4d8;
+      border-radius: 4px;
+      transition: background-color 0.3s ease, color 0.3s ease, transform 0.15s ease;
+    }
+    input:focus, select:focus {
+      outline: none;
+      border-color: #8888ff;
+      background-color: #2a2a50;
+      color: #eee;
+      box-shadow: 0 0 8px #6666ff;
+      transition: all 0.3s ease;
+    }
+    button:hover {
+      background-color: #444466;
+      color: #fff;
+      cursor: pointer;
+      transform: scale(1.05);
+    }
+    button:active {
+      transform: scale(0.95);
+      transition: transform 0.1s ease;
+    }
+    label {
+      display: block;
+      margin-top: 10px;
+    }
+    .container {
+      max-width: 900px;
+      margin: auto;
+      opacity: 1;
+      transition: opacity 0.4s ease;
+    }
+    #subjectsContainer {
+      margin-top: 20px;
+      opacity: 1;
+      transition: opacity 0.4s ease;
+    }
+    .header-row, .subject-row {
+      display: flex;
+      padding: 10px 12px;
+      border-bottom: 1px solid #444;
+      align-items: center;
+      transition: background-color 0.3s ease, transform 0.3s ease;
+    }
+    .header-row {
+      font-weight: bold;
+      border-bottom: 2px solid #666;
+    }
+    .subject-row {
+      cursor: pointer;
+    }
+    .subject-row:hover {
+      background-color: #222;
+      transform: translateX(5px);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+      transition: background-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    /* All columns same size and big */
+    .subject-name, .subject-emoji, .subject-grade, .subject-letter {
+      flex: 1 1 0;
+      min-width: 180px;
+      max-width: 220px;
+      font-size: 1.2em;
+      text-align: center;
+    }
+    .subject-name {
+      text-align: left;
+      min-width: 220px;
+      max-width: 300px;
+    }
+    .subject-emoji {
+      font-size: 24px;
+    }
+    .subject-row:hover .subject-emoji {
+      transform: scale(1.3);
+    }
+    .whatif-button {
+      font-size: 12px;
+      margin-left: 10px;
+      padding: 4px 8px;
+      background-color: #333355;
+      border: none;
+      border-radius: 4px;
+      color: #ccc;
+      transition: background-color 0.3s ease, color 0.3s ease, transform 0.15s ease;
+    }
+    .whatif-button:hover {
+      background-color: #6666aa;
+      color: #fff;
+      cursor: pointer;
+      transform: scale(1.1);
+    }
+    .whatif-button:active {
+      transform: scale(0.95);
+    }
+    .grades-section {
+      margin-top: 20px;
+      background-color: #1e1e1e;
+      padding: 10px;
+      border-radius: 6px;
+      box-shadow: 0 0 10px #4444aa33;
+    }
+    .assignments-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    .assignments-table th, .assignments-table td {
+      border: 1px solid #444;
+      padding: 6px 8px;
+      text-align: left;
+      color: #d4d4d8;
+    }
+    .assignments-table th {
+      background-color: #2a2a50;
+    }
+    .input-assignment {
+      width: 100%;
+      background-color: #1e1e1e;
+      border: 1px solid #333;
+      color: #d4d4d8;
+      border-radius: 4px;
+      padding: 4px 6px;
+      font-family: Georgia, serif;
+      font-size: 14px;
+    }
+    .btn-delete {
+      background-color: #aa4444;
+      border: none;
+      padding: 4px 8px;
+      border-radius: 4px;
+      color: #fff;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background-color 0.3s ease;
+    }
+    .btn-delete:hover {
+      background-color: #ff6666;
+    }
+    .projected-grade-box {
+      margin-top: 12px;
+      padding: 10px;
+      background-color: #2a2a50;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 18px;
+      color: #ccc;
+      user-select: none;
+    }
+  </style>
+</head>
+<body>
+<div class="container" id="mainContainer">
+  <h1>Subject-Based Grade Tracker</h1>
+
+  <label for="newSubject">Add Subject:</label>
+  <input type="text" id="newSubject" placeholder="Enter subject name" />
+  <button onclick="addSubject()">Add Subject</button>
+
+  <div id="subjectsContainer">
+    <div class="header-row">
+      <div class="subject-name">Subject</div>
+      <div class="subject-emoji">Emoji</div>
+      <div class="subject-grade">Current Grade</div>
+      <div class="subject-letter">Letter Grade</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const subjects = {};
+
+  function fadeOutIn(element, callback) {
+    element.style.opacity = 0;
+    element.style.transform = 'translateY(10px)';
+    setTimeout(() => {
+      callback();
+      element.style.opacity = 1;
+      element.style.transform = 'translateY(0)';
+    }, 300);
+  }
+
+  function addSubject() {
+    const name = document.getElementById('newSubject').value.trim();
+    if (!name || subjects[name]) return;
+    subjects[name] = { assignments: [], perfWeight: 80, pracWeight: 20 };
+    fadeOutIn(document.getElementById('subjectsContainer'), renderSubjects);
+    document.getElementById('newSubject').value = '';
+  }
+
+  function getEmoji(grade) {
+    if (grade >= 90) return '😊';
+    if (grade >= 70) return '🙂';
+    if (grade >= 50) return '😐';
+    return '☹️';
+  }
+
+  // Letter grade function
+  function getLetterGrade(grade) {
+    if (grade >= 90) return 'A';
+    if (grade >= 80) return 'B';
+    if (grade >= 70) return 'C';
+    if (grade >= 60) return 'D';
+    if (grade > 0)   return 'F';
+    return '-';
+  }
+
+  function renderSubjects() {
+    const container = document.getElementById('subjectsContainer');
+    container.innerHTML = `
+      <div class="header-row">
+        <div class="subject-name">Subject</div>
+        <div class="subject-emoji">Emoji</div>
+        <div class="subject-grade">Current Grade</div>
+        <div class="subject-letter">Letter Grade</div>
+      </div>
+    `;
+
+    Object.keys(subjects).forEach(subject => {
+      const div = document.createElement('div');
+      div.className = 'subject-row';
+
+      const grade = calculateFinal(subject);
+      const emoji = getEmoji(grade);
+      const letter = getLetterGrade(grade);
+      div.innerHTML = `
+        <div class="subject-name">
+          <span onclick="editSubject('${subject}')">${subject}</span>
+          <button class="whatif-button" onclick="event.stopPropagation(); showWhatIf('${subject}')">What If</button>
+        </div>
+        <div class="subject-emoji">${emoji}</div>
+        <div class="subject-grade">${grade}</div>
+        <div class="subject-letter">${letter}</div>
+      `;
+      container.appendChild(div);
+    });
+  }
+
+  function editSubject(subject) {
+    const container = document.getElementById('subjectsContainer');
+    fadeOutIn(container, () => {
+      const sub = subjects[subject];
+      // Build assignments table with editable fields and delete buttons
+      const assignmentsHTML = sub.assignments.map((a, i) => `
+        <tr>
+          <td><input class="input-assignment" type="text" value="${a.title}" onchange="updateAssignment('${subject}', ${i}, 'title', this.value)" /></td>
+          <td>
+            <select class="input-assignment" onchange="updateAssignment('${subject}', ${i}, 'type', this.value)">
+              <option value="performance" ${a.type === 'performance' ? 'selected' : ''}>Performance</option>
+              <option value="practice" ${a.type === 'practice' ? 'selected' : ''}>Practice</option>
+            </select>
+          </td>
+          <td><input class="input-assignment" type="number" step="0.01" min="0" max="100" value="${a.grade}" onchange="updateAssignment('${subject}', ${i}, 'grade', parseFloat(this.value))" /></td>
+          <td><button class="btn-delete" onclick="deleteAssignment('${subject}', ${i})">Delete</button></td>
+        </tr>
+      `).join('');
+
+      container.innerHTML = `
+        <h2>${subject}</h2>
+        <label>Assignment Title:</label>
+        <input type="text" id="assignTitle" placeholder="e.g. Quiz 1">
+
+        <label>Type:</label>
+        <select id="assignType">
+          <option value="performance">Performance</option>
+          <option value="practice">Practice</option>
+        </select>
+
+        <label>Grade:</label>
+        <input type="number" id="assignGrade" placeholder="e.g. 92" step="0.01" min="0" max="100">
+
+        <label>Performance Weight (%):</label>
+        <input type="number" id="perfWeight" value="${sub.perfWeight}" step="0.1" min="0" max="100">
+
+        <label>Practice Weight (%):</label>
+        <input type="number" id="pracWeight" value="${sub.pracWeight}" step="0.1" min="0" max="100">
+
+        <button onclick="addAssignment('${subject}')">Add Assignment</button>
+        <button onclick="renderSubjects()">Back</button>
+
+        <div class="grades-section" id="gradeResult">
+          <h3>Assignments</h3>
+          <table class="assignments-table">
+            <thead>
+              <tr>
+                <th>Title</th>
+                <th>Type</th>
+                <th>Grade</th>
+                <th>Delete</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${assignmentsHTML || `<tr><td colspan="4" style="text-align:center;">No assignments added yet.</td></tr>`}
+            </tbody>
+          </table>
+          <div><strong>Final Grade:</strong> ${calculateFinal(subject)} (${getLetterGrade(calculateFinal(subject))})</div>
+        </div>
+      `;
+    });
+  }
+
+  function updateAssignment(subject, index, field, value) {
+    if (!subjects[subject] || !subjects[subject].assignments[index]) return;
+    subjects[subject].assignments[index][field] = value;
+
+    // Validate grade to be number within 0-100
+    if (field === 'grade') {
+      if (typeof value !== 'number' || isNaN(value) || value < 0) subjects[subject].assignments[index][field] = 0;
+      else if (value > 100) subjects[subject].assignments[index][field] = 100;
+    }
+
+    // Auto-save weights from inputs if editing weights
+    subjects[subject].perfWeight = parseFloat(document.getElementById('perfWeight').value) || subjects[subject].perfWeight;
+    subjects[subject].pracWeight = parseFloat(document.getElementById('pracWeight').value) || subjects[subject].pracWeight;
+
+    // Re-render editSubject to update final grade and keep inputs updated
+    editSubject(subject);
+  }
+
+  function deleteAssignment(subject, index) {
+    if (!subjects[subject]) return;
+    subjects[subject].assignments.splice(index, 1);
+    editSubject(subject);
+  }
+
+  function addAssignment(subject) {
+    const title = document.getElementById('assignTitle').value.trim();
+    const type = document.getElementById('assignType').value;
+    let grade = parseFloat(document.getElementById('assignGrade').value);
+
+    if (!title || isNaN(grade) || grade < 0) return alert('Please enter a valid assignment title and grade between 0 and 100.');
+
+    if (grade > 100) grade = 100;
+
+    subjects[subject].assignments.push({ title, type, grade });
+
+    const perfWeightInput = parseFloat(document.getElementById('perfWeight').value);
+    const pracWeightInput = parseFloat(document.getElementById('pracWeight').value);
+    if (!isNaN(perfWeightInput)) subjects[subject].perfWeight = perfWeightInput;
+    if (!isNaN(pracWeightInput)) subjects[subject].pracWeight = pracWeightInput;
+
+    // Clear input fields
+    document.getElementById('assignTitle').value = '';
+    document.getElementById('assignGrade').value = '';
+
+    editSubject(subject);
+  }
+
+  function calculateFinal(subject) {
+    const perfWeight = subjects[subject].perfWeight;
+    const pracWeight = subjects[subject].pracWeight;
+    const totalWeight = perfWeight + pracWeight;
+    const pRatio = totalWeight === 0 ? 0 : perfWeight / totalWeight;
+    const rRatio = totalWeight === 0 ? 0 : pracWeight / totalWeight;
+
+    const perfGrades = subjects[subject].assignments.filter(a => a.type === 'performance').map(a => a.grade);
+    const pracGrades = subjects[subject].assignments.filter(a => a.type === 'practice').map(a => a.grade);
+
+    const hasPerf = perfGrades.length > 0;
+    const hasPrac = pracGrades.length > 0;
+
+    const perfAvg = hasPerf ? perfGrades.reduce((a, b) => a + b, 0) / perfGrades.length : 0;
+    const pracAvg = hasPrac ? pracGrades.reduce((a, b) => a + b, 0) / pracGrades.length : 0;
+
+    if (!hasPerf && hasPrac) return Math.round(pracAvg * 100) / 100;
+    if (hasPerf && !hasPrac) return Math.round(perfAvg * 100) / 100;
+    if (!hasPerf && !hasPrac) return 0;
+
+    const finalGrade = (perfAvg * pRatio) + (pracAvg * rRatio);
+    return Math.round(finalGrade * 100) / 100;
+  }
+
+  function showWhatIf(subject) {
+    const section = document.getElementById('subjectsContainer');
+    fadeOutIn(section, () => {
+      section.innerHTML = `
+        <h1 style="font-size: 30px;">What If Assignment</h1>
+        <label>What if I scored:</label>
+        <input type="number" id="whatIfGrade" placeholder="e.g. 100" min="0" max="100" step="0.01">
+
+        <label>Assignment Title:</label>
+        <input type="text" id="whatIfTitle" placeholder="e.g. Quiz 3 (hypothetical)">
+
+        <label>Assignment Type:</label>
+        <select id="whatIfType">
+          <option value="performance">Performance</option>
+          <option value="practice">Practice</option>
+        </select>
+
+        <button onclick="calculateWhatIf('${subject}')">See Result</button>
+        <button onclick="renderSubjects()">Cancel</button>
+
+        <div class="projected-grade-box" id="whatIfResult"></div>
+      `;
+    });
+  }
+
+  function calculateWhatIf(subject) {
+    let whatIfGrade = parseFloat(document.getElementById('whatIfGrade').value);
+    const whatIfType = document.getElementById('whatIfType').value;
+    const whatIfTitle = document.getElementById('whatIfTitle').value.trim() || "Untitled (What If)";
+
+    if (isNaN(whatIfGrade) || whatIfGrade < 0) {
+      document.getElementById('whatIfResult').textContent = "Please enter a valid grade between 0 and 100.";
+      return;
+    }
+    if (whatIfGrade > 100) whatIfGrade = 100;
+
+    const tempAssignments = [...subjects[subject].assignments, {
+      title: whatIfTitle,
+      type: whatIfType,
+      grade: whatIfGrade
+    }];
+
+    const perfWeight = subjects[subject].perfWeight;
+    const pracWeight = subjects[subject].pracWeight;
+    const totalWeight = perfWeight + pracWeight;
+    const pRatio = totalWeight === 0 ? 0 : perfWeight / totalWeight;
+    const rRatio = totalWeight === 0 ? 0 : pracWeight / totalWeight;
+
+    const perfGrades = tempAssignments.filter(a => a.type === 'performance').map(a => a.grade);
+    const pracGrades = tempAssignments.filter(a => a.type === 'practice').map(a => a.grade);
+
+    const hasPerf = perfGrades.length > 0;
+    const hasPrac = pracGrades.length > 0;
+
+    const perfAvg = hasPerf ? perfGrades.reduce((a, b) => a + b, 0) / perfGrades.length : 0;
+    const pracAvg = hasPrac ? pracGrades.reduce((a, b) => a + b, 0) / pracGrades.length : 0;
+
+    if (!hasPerf && hasPrac) {
+      document.getElementById('whatIfResult').textContent = `Projected Final Grade: ${pracAvg.toFixed(2)} (${getLetterGrade(pracAvg)})`;
+      return;
+    }
+    if (hasPerf && !hasPrac) {
+      document.getElementById('whatIfResult').textContent = `Projected Final Grade: ${perfAvg.toFixed(2)} (${getLetterGrade(perfAvg)})`;
+      return;
+    }
+    if (!hasPerf && !hasPrac) {
+      document.getElementById('whatIfResult').textContent = `No assignments yet.`;
+      return;
+    }
+
+    const finalGrade = (perfAvg * pRatio) + (pracAvg * rRatio);
+    document.getElementById('whatIfResult').textContent = `Projected Final Grade: ${finalGrade.toFixed(2)} (${getLetterGrade(finalGrade)})`;
+  }
+
+  renderSubjects();
+</script>
+</body>
+</html>
